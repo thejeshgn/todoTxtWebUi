@@ -8,6 +8,7 @@ module.exports = function(grunt) {
         "js/todoTxt.js",
         "js/objects/utils.js",
         "js/classes/task.js",
+        "js/objects/database.js",
         "js/objects/view.js",
         "js/objects/resources.js",
         "js/objects/resources/en-us.js",
@@ -16,8 +17,8 @@ module.exports = function(grunt) {
       css: [
         "css/todoTxt.css",
       ],
-      tests: "tests/qunit/allTests.html",
-      functionalTests: ["tests/pft/tests/**/*.js"]
+      //tests: "tests/qunit/allTests.html",
+      //functionalTests: ["tests/pft/tests/**/*.js"]
     },
     clean: {
       build: {
