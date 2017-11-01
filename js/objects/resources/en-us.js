@@ -47,4 +47,5 @@ TodoTxt.Resources.register("en-us", {
     UPDATE: "Update",
     PREVIEW: "Preview",
     DELETE: "Delete",
+    SYNC: "Sync"
 });

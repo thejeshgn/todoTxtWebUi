@@ -1,4 +1,9 @@
+function syncWithCouchDB(){
+	TodoTxt.Database.init();
+}
+
 $(document).ready(function (e) {
-    TodoTxt.View.initializeElements();
-    TodoTxt.View.refreshUi();
+	syncWithCouchDB();
+	TodoTxt.View.initializeElements();
+	TodoTxt.View.refreshUi();
 });

@@ -89,24 +89,32 @@ TodoTxt.View = {
     displayTasks: function () {
         // get the list of selected priorities from the filter
         var filterStr = document.querySelector("#filter-input").value;
-
         // filter list by those matching selected filters
-        var filteredTasks = TodoTxt.getFilteredTaskArray(filterStr);
+        var filterTasksPromise = TodoTxt.getFilteredTaskArray(filterStr);
+        //console.log(filterTasksPromise);
+        
+        filterTasksPromise.then(
+            function (filteredTasks) {
 
-        if (!TodoTxt.View.getShowClosedStatus()) {
-            // filter out closed tasks
-            var tasks = filteredTasks.filter(function (t) {
-                return t.isActive;
-            });
-            filteredTasks = tasks;
-        }
+                    //console.log("filteredTasks="+filteredTasks);
+                    if (!TodoTxt.View.getShowClosedStatus()) {
+                        // filter out closed tasks
+                        var tasks = filteredTasks.filter(function (t) {
+                            return t.isActive;
+                        });
+                        filteredTasks = tasks;
+                    }
 
-        if (filteredTasks && filteredTasks.length > 0) {
-            // add tasks to DOM
-            filteredTasks.forEach(function (t) {
-                TodoTxt.View.displayTask(t);
-            });
-        }
+                    if (filteredTasks && filteredTasks.length > 0) {
+                        // add tasks to DOM
+                        filteredTasks.forEach(function (t) {
+                            TodoTxt.View.displayTask(t);
+                        });
+                    }
+
+            }//sucess function
+        );//getFilteredTaskArray
+
     },
 
     displayTask: function (task) {
@@ -638,17 +646,20 @@ TodoTxt.View = {
     <div class="col-md-9"> \
         <div class="row"> \
             <div class="btn-group btn-group-justified"> \
-                <a class="btn btn-block btn-primary btn-lg btn-file ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("IMPORT") + '"> \
-                    <span class="glyphicon glyphicon-open"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("IMPORT") + '</span> <input id="fileUpload-input" type="file" placeholder="Select todo.txt File"> \
-                </a> \
                 <a id="addTaskButton-button" class="btn btn-lg btn-primary ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("ADD_TASK") + '"> \
                     <span class="glyphicon glyphicon-plus"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("ADD_TASK") + '</span> \
+                </a> \
+                <a id="showClosed-label" class="btn btn-lg btn-danger ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("SHOW_CLOSED") + '"> \
+                    <span class="glyphicon glyphicon-ok-circle"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("SHOW_CLOSED") + '</span> \
+                </a> \
+                <a class="btn btn-block btn-primary btn-lg btn-file ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("IMPORT") + '"> \
+                    <span class="glyphicon glyphicon-open"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("IMPORT") + '</span> <input id="fileUpload-input" type="file" placeholder="Select todo.txt File"> \
                 </a> \
                 <a id="saveFileButton-button" class="btn btn-lg btn-primary ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("EXPORT") + '"> \
                     <span class="glyphicon glyphicon-save"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("EXPORT") + '</span> \
                 </a> \
-                <a id="showClosed-label" class="btn btn-lg btn-danger ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("SHOW_CLOSED") + '"> \
-                    <span class="glyphicon glyphicon-ok-circle"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("SHOW_CLOSED") + '</span> \
+                <a id="saveFileButton-button" class="btn btn-lg btn-primary ellipsis" data-toggle="tooltip" data-placement="top" text="' + TodoTxt.Resources.get("SYNC") + '"> \
+                    <span class="glyphicon glyphicon-save"></span> <span class="hidden-xs">' + TodoTxt.Resources.get("SYNC") + '</span> \
                 </a> \
             </div> \
         </div> \

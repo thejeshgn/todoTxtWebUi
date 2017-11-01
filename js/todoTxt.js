@@ -56,22 +56,9 @@ var TodoTxt = {
      */
     getSortedTaskArray: function () {
         // sort the list and then add it
-        var taskArray = [];
-        var taskMatcher = new RegExp("^(" + new TodoTxt.Task().namespace + ")");
-        TodoTxt._clearAttributes();
-        for (var key in localStorage) {
-            if (key.match(taskMatcher)) {
-                var t = TodoTxt.getTask(key);
-                if (t) {
-                    t.id = key;
-                    taskArray.push(t);
-                    TodoTxt._updateAttributes(t);
-                }
-            }
-        }
-        taskArray.sort(TodoTxt._compareTasks);
+        //couchDB, get all
 
-        return taskArray;
+
     },
 
     /**
@@ -83,23 +70,67 @@ var TodoTxt = {
      * @returns {array} a sorted list of tasks matching the passed in <b><i>filterStr</i></b>
      */
     getFilteredTaskArray: function (filterStr) {
-        var filteredTasks = TodoTxt.getSortedTaskArray();
-        if (filterStr && filterStr !== "") {
-            // create the regex matcher
-            var filters = filterStr.split(" ");
-            var rStr = ".*";
-            for (var i=0; i<filters.length; i++) {
-                var filter = filters[i].replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, '\\$1').replace(/\x08/g, '\\x08');
-                rStr += "(" + filter + ").*";
-            }
-            var regex = new RegExp(rStr, "i");
-            var tasks = filteredTasks.filter(function (t) {
-                return t.toString().match(regex);
-            });
-            filteredTasks = tasks;
-        }
+        //console.log("--------------------------- getFilteredTaskArray");
+        var myFirstPromise = new Promise( /* executor */ function(resolve, reject) {
 
-        return filteredTasks;
+            
+                var taskArray = [];
+                var taskMatcher = new RegExp("^(" + new TodoTxt.Task().namespace + ")");
+                TodoTxt._clearAttributes();
+
+                TodoTxt.Database.db.allDocs({
+                   include_docs: true,
+                   attachments: true
+                 }).then(function (result) {
+                     //console.log("get All Docs");
+                     //console.log(result);
+                     var rows = result['rows'];
+                     for(i=0; i< rows.length; i++){
+                         TodoTxt.updateTask(rows[i]['doc']._id, rows[i]['doc'].text);
+                            if (rows[i]['doc']._id.match(taskMatcher)) {
+                                var t = new TodoTxt.Task(rows[i]['doc'].text);
+                                if (t) {
+                                    t.id = rows[i]['doc']._id;
+                                    taskArray.push(t);
+                                    TodoTxt._updateAttributes(t);
+                                }
+                            }
+
+                     }
+                    taskArray.sort(TodoTxt._compareTasks);
+
+                    if (filterStr && filterStr !== "") {
+                        // create the regex matcher
+                        var filters = filterStr.split(" ");
+                        var rStr = ".*";
+                        for (var i=0; i<filters.length; i++) {
+                            var filter = filters[i].replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, '\\$1').replace(/\x08/g, '\\x08');
+                            rStr += "(" + filter + ").*";
+                        }
+                        var regex = new RegExp(rStr, "i");
+                        var tasks = taskArray.filter(function (t) {
+                            return t.toString().match(regex);
+                        });
+                        taskArray = tasks;
+                        //console.log("Inside filtering before resolve");
+                        //console.log(taskArray);
+                        resolve(taskArray);
+                    }else{
+                        resolve(taskArray);
+                    }
+
+                 }).catch(function (err) {
+                     console.log(err);
+                 });
+
+
+
+
+
+
+         } );
+
+        return myFirstPromise;
     },
 
     /**
@@ -147,6 +178,7 @@ var TodoTxt = {
      * @returns {TodoTxt.Task} a task or null if task not found
      */
     getTask: function (taskId) {
+        //couchdb getItem
         var task,
             text = localStorage.getItem(taskId);
         if (text !== null && text !== undefined) {
@@ -167,8 +199,25 @@ var TodoTxt = {
         var task = new TodoTxt.Task(newText);
         task.id = taskId;
 
-        // overwrite localstorage with updated task
-        TodoTxt.addTask(task);
+        TodoTxt.Database.db.get(task.id).then(function (doc) {
+            doc.completedDate = task.completedDate;
+            doc.contexts = task.contexts;
+            doc.createdDate = task.createdDate;
+            doc.id = task.id;
+            doc.isActive = task.isActive;
+            doc.metadatas = task.metadatas;
+            doc.namespace = task.namespace;
+            doc.priority = task.priority;
+            doc.projects = task.projects;
+            doc.text = task.text;
+            doc._rev = doc._rev;
+          return TodoTxt.Database.db.put(doc);
+        }).catch(function (err) {
+            console.log(err);
+            if(err.status == 404){
+                TodoTxt.addTask(task); 
+            }
+        });
 
         return true;
     },
@@ -178,8 +227,25 @@ var TodoTxt = {
      * retained data on subsequent reloads of the page
      * @param {TodoTxt.Task} task - a task to be added to localStorage
      */
-    addTask: function (task) {
-        localStorage.setItem(task.id, task.toString());
+    addTask: function (task) {        
+        //add to couchdb        
+        TodoTxt.Database.db.put({
+            completedDate : task.completedDate,
+            contexts : task.contexts,
+            createdDate : task.createdDate,
+            _id : task.id,
+            isActive : task.isActive,
+            metadatas : task.metadatas,
+            namespace : task.namespace,
+            priority : task.priority,
+            projects : task.projects,
+            text : task.text
+        }).then(function (response) {
+          // handle response
+          
+        }).catch(function (err) {
+          //console.log(err);
+        });
         TodoTxt._updateAttributes(task);
     },
 
@@ -228,6 +294,7 @@ var TodoTxt = {
      * @returns {boolean} true if task could be deleted otherwise false
      */
     deleteTask: function (taskId) {
+        //couchdb
         localStorage.removeItem(taskId);
         return true;
     },
